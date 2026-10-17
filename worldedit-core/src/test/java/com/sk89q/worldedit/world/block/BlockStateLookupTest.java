@@ -198,7 +198,7 @@ class BlockStateLookupTest extends BaseWorldEditTest {
             .with(east, "up")
             .with(power, 15);
         assertEquals("up", state.getState(east));
-        assertEquals(15, state.getState(power).intValue());
+        assertEquals(Integer.valueOf(15), state.getState(power));
         assertEquals(3 * 3 * 3 * 3 * 16, type.getAllStates().size());
     }
 
@@ -232,6 +232,6 @@ class BlockStateLookupTest extends BaseWorldEditTest {
         assertEquals(1000, type.getAllStates().size());
         IntegerProperty aCopy = new IntegerProperty("a", IntStream.range(0, 10).boxed().toList());
         BlockState nine = type.getDefaultState().with(aCopy, 9);
-        assertEquals(9, nine.getState(type.getProperty("a")).intValue());
+        assertEquals(Integer.valueOf(9), nine.getState(type.getProperty("a")));
     }
 }
