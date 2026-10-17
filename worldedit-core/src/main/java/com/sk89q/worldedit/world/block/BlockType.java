@@ -21,7 +21,6 @@ package com.sk89q.worldedit.world.block;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.extension.platform.Capability;
 import com.sk89q.worldedit.registry.Keyed;
@@ -46,9 +45,7 @@ public class BlockType implements Keyed {
     public static final NamespacedRegistry<BlockType> REGISTRY = new NamespacedRegistry<>("block type", true);
 
     private final String id;
-    private final Function<BlockState, BlockState> values;
-    private final LazyReference<BlockState> defaultState
-        = LazyReference.from(this::computeDefaultState);
+    private final LazyReference<BlockState> defaultState;
     @SuppressWarnings("this-escape")
     private final LazyReference<FuzzyBlockState> emptyFuzzy
         = LazyReference.from(() -> new FuzzyBlockState(this));
@@ -57,12 +54,12 @@ public class BlockType implements Keyed {
         = LazyReference.from(() -> ImmutableMap.copyOf(WorldEdit.getInstance().getPlatformManager()
         .queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().getProperties(this)));
     @SuppressWarnings("this-escape")
+    private final LazyReference<BlockTypeStateList> internalStateList =
+        LazyReference.from(() -> BlockTypeStateList.createFor(this));
+    @SuppressWarnings("this-escape")
     private final LazyReference<BlockMaterial> blockMaterial
         = LazyReference.from(() -> WorldEdit.getInstance().getPlatformManager()
         .queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().getMaterial(this));
-    @SuppressWarnings("this-escape")
-    private final LazyReference<Map<Map<Property<?>, Object>, BlockState>> blockStatesMap
-        = LazyReference.from(() -> BlockState.generateStateMap(this));
 
     @SuppressWarnings("this-escape")
     @Deprecated
@@ -83,19 +80,19 @@ public class BlockType implements Keyed {
             id = "minecraft:" + id;
         }
         this.id = id;
-        this.values = values;
+        this.defaultState = LazyReference.from(() -> computeDefaultState(values));
     }
 
-    private BlockState computeDefaultState() {
-        BlockState defaultState = Iterables.getFirst(getBlockStatesMap().values(), null);
-        if (values != null) {
-            defaultState = values.apply(defaultState);
+    BlockTypeStateList getInternalStateList() {
+        return internalStateList.getValue();
+    }
+
+    private BlockState computeDefaultState(Function<BlockState, BlockState> applyDefaultValues) {
+        BlockState state = getInternalStateList().get(0);
+        if (applyDefaultValues != null) {
+            state = applyDefaultValues.apply(state);
         }
-        return defaultState;
-    }
-
-    private Map<Map<Property<?>, Object>, BlockState> getBlockStatesMap() {
-        return blockStatesMap.getValue();
+        return state;
     }
 
     /**
@@ -179,7 +176,7 @@ public class BlockType implements Keyed {
      * @return All possible states
      */
     public List<BlockState> getAllStates() {
-        return ImmutableList.copyOf(getBlockStatesMap().values());
+        return getInternalStateList();
     }
 
     /**
@@ -188,9 +185,9 @@ public class BlockType implements Keyed {
      * @return The state, if it exists
      */
     public BlockState getState(Map<Property<?>, Object> key) {
-        BlockState state = getBlockStatesMap().get(key);
-        checkArgument(state != null, "%s has no state for %s", this, key);
-        return state;
+        BlockTypeStateList map = getInternalStateList();
+        int index = map.calculateIndex(key);
+        return map.get(index);
     }
 
     /**
