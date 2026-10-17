@@ -25,11 +25,15 @@ jobs:
       - name: Build NeoForge dist jar
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx3g
-        run: ./gradlew :worldedit-neoforge:build -Pworldedit.minimalNeoforge=true --stacktrace
+        # shadowJar is not part of assemble; :build only produces the thin jar.
+        run: ./gradlew :worldedit-neoforge:build :worldedit-neoforge:shadowJar -Pworldedit.minimalNeoforge=true --stacktrace
+
+      - name: Show NeoForge jars
+        run: ls -la worldedit-neoforge/build/libs
 
       - name: Upload NeoForge dist jar
         uses: actions/upload-artifact@v4
         with:
           name: worldedit-neoforge-mc1.21-7.3.8-dist.jar
-          path: worldedit-neoforge/build/libs/worldedit-neoforge-mc1.21-7.3.8-dist.jar
+          path: worldedit-neoforge/build/libs/*-dist.jar
           if-no-files-found: error
