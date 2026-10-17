@@ -1,0 +1,35 @@
+name: Build NeoForge
+
+on:
+  push:
+    branches:
+      - cursor/7.3.8-line-38ad
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build worldedit-neoforge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build NeoForge dist jar
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx3g
+        run: ./gradlew :worldedit-neoforge:build -Pworldedit.minimalNeoforge=true --stacktrace
+
+      - name: Upload NeoForge dist jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: worldedit-neoforge-mc1.21-7.3.8-dist.jar
+          path: worldedit-neoforge/build/libs/worldedit-neoforge-mc1.21-7.3.8-dist.jar
+          if-no-files-found: error

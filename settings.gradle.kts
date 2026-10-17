@@ -71,17 +71,32 @@ includeBuild("build-logic")
 
 include("worldedit-libs")
 
-listOf("1.20.2", "1.20.4", "1.20.6", "1.21").forEach {
-    include("worldedit-bukkit:adapters:adapter-$it")
+val minimalNeoforge = providers.gradleProperty("worldedit.minimalNeoforge")
+    .map { it == "true" }
+    .orElse(false)
+    .get()
+
+if (minimalNeoforge) {
+    // Skip Bukkit/Paper adapters (dev-bundle is not on EngineHub's Maven) and
+    // other platforms so CI can build only the NeoForge 1.21 jar.
+    include("worldedit-libs:core")
+    include("worldedit-core")
+    include("worldedit-libs:neoforge")
+    include("worldedit-neoforge")
+    include("worldedit-libs:core:ap")
+} else {
+    listOf("1.20.2", "1.20.4", "1.20.6", "1.21").forEach {
+        include("worldedit-bukkit:adapters:adapter-$it")
+    }
+
+    listOf("bukkit", "core", "fabric", "neoforge", "sponge", "cli").forEach {
+        include("worldedit-libs:$it")
+        include("worldedit-$it")
+    }
+    include("worldedit-mod")
+    include("worldedit-libs:core:ap")
+
+    include("worldedit-core:doctools")
+
+    include("verification")
 }
-
-listOf("bukkit", "core", "fabric", "neoforge", "sponge", "cli").forEach {
-    include("worldedit-libs:$it")
-    include("worldedit-$it")
-}
-include("worldedit-mod")
-include("worldedit-libs:core:ap")
-
-include("worldedit-core:doctools")
-
-include("verification")

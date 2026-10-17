@@ -1,5 +1,11 @@
 name: Gradle Build
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - cursor/7.3.8-line-38ad
+  pull_request:
+    branches-ignore:
+      - cursor/7.3.8-line-38ad
 
 jobs:
   build:
@@ -40,4 +46,3 @@ jobs:
       with:
         name: logs for ${{ matrix.os }}
         path: '**/*.log'
-
